@@ -119,6 +119,7 @@ class BaseRubyTask(sublime_plugin.TextCommand):
     global RUBY_UNIT_FOLDER; RUBY_UNIT_FOLDER = s.get("ruby_unit_folder")
     global CUCUMBER_UNIT_FOLDER; CUCUMBER_UNIT_FOLDER = s.get("ruby_cucumber_folder")
     global RSPEC_UNIT_FOLDER; RSPEC_UNIT_FOLDER = s.get("ruby_rspec_folder")
+    global JASMINE_UNIT_FOLDER; JASMINE_UNIT_FOLDER = s.get("jasmine_spec_folder")
     global USE_SCRATCH; USE_SCRATCH = s.get("ruby_use_scratch")
     global IGNORED_DIRECTORIES; IGNORED_DIRECTORIES = s.get("ignored_directories")
     global HIDE_PANEL; HIDE_PANEL = s.get("hide_panel")
@@ -232,6 +233,15 @@ class BaseRubyTask(sublime_plugin.TextCommand):
     def features(self): return ["switch_to_test", "run_test"]
     def get_project_root(self): return self.find_project_root()
 
+  class JasmineFile(BaseFile):
+    def possible_alternate_files(self): return []
+    def run_all_tests_command(self):
+      return RubyTestSettings().run_snapdragon_command(relative_path=self.relative_file_path())
+    def run_single_test_command(self, view):
+      return RubyTestSettings().run_single_snapdragon_command(relative_path=self.relative_file_path(), line_number=self.get_current_line_number(view))
+    def features(self): return ["run_test"]
+    def get_project_root(self): return self.find_project_root()
+
   class RSpecFile(RubyFile):
     def possible_alternate_files(self): return list( set( [self.file_name.replace("_spec.rb", ".rb"), self.file_name.replace("_haml_spec.rb", ".haml")] ) - set([self.file_name]) )
     def run_all_tests_command(self): return RubyTestSettings().run_rspec_command(relative_path=self.relative_file_path())
@@ -272,6 +282,9 @@ class BaseRubyTask(sublime_plugin.TextCommand):
     elif re.search('\w+\.feature', file_name):
       partition_folder = self.find_partition_folder(file_name, CUCUMBER_UNIT_FOLDER)
       return BaseRubyTask.CucumberFile(file_name, partition_folder)
+    elif re.search('\w+\_spec.js', file_name):
+      partition_folder = self.find_partition_folder(file_name, JASMINE_UNIT_FOLDER)
+      return BaseRubyTask.JasmineFile(file_name, partition_folder)
     elif re.search('\w+\_steps.rb', file_name):
       return BaseRubyTask.CucumberStepsFile(file_name)
     elif re.search('\w+\.rb', file_name):
